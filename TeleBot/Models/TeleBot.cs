@@ -12,7 +12,7 @@
         private string path;
         private TelegramBotClient client;
         private TaskCompletionSource<bool> isBusy;
-        
+
         private static TelegaBot instance;
 
         public static TelegaBot Instance
@@ -58,20 +58,20 @@
 
         public async Task OnMessageReceived(Telegram.Bot.Types.Message message)
         {
-            try
+            if (!string.IsNullOrEmpty(message?.Text))
             {
-                if (!string.IsNullOrEmpty(message?.Text))
+                if (this.isBusy != null)
                 {
-                    if (this.isBusy != null)
-                    {
-                        await this.isBusy.Task;
-                    }
+                    await this.isBusy.Task;
+                }
 
-                    this.isBusy = new TaskCompletionSource<bool>();
+                this.isBusy = new TaskCompletionSource<bool>();
 
-                    var analyzedText = new AnalyzedText(message.Text);
+                var analyzedText = new AnalyzedText(message.Text);
 
-                    if (!string.IsNullOrEmpty(analyzedText?.Answer))
+                if (!string.IsNullOrEmpty(analyzedText?.Answer))
+                {
+                    try
                     {
                         if (analyzedText.IsHello)
                         {
@@ -98,13 +98,15 @@
 
                         }
                     }
-                    this.isBusy.TrySetResult(false);
+                    catch (Exception)
+                    {
+                        //TODO: log
+                    }
                 }
             }
-            catch (Exception)
-            { 
-                //TODO: log
-            }
+
+
+            this.isBusy.TrySetResult(false);
         }
 
         private async Task<string> GetImage(string url)
